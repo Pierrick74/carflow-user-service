@@ -24,6 +24,7 @@ public class UserService {
         newClient.setSurname(client.getSurname());
         newClient.setBirthday(client.getBirthday());
         newClient.setDrivingLicenseNumber(client.getDrivingLicenseNumber());
+        newClient.setRegistrationDate(client.getRegistrationDate());
 
         userDAO.save(newClient);
 

@@ -20,6 +20,10 @@ public class UserDTO {
         this.registrationDate = registrationDate;
     }
 
+    public UserDTO() {
+
+    }
+
     public int getId() {
         return id;
     }
