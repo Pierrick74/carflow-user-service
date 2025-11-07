@@ -6,6 +6,7 @@ import com.PulseLabs.carflow_user_service.db.UserRepository;
 import com.PulseLabs.carflow_user_service.model.User;
 import com.PulseLabs.carflow_user_service.model.UserDTO;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -19,8 +20,11 @@ public class UserService {
 
     private final UserRepository dbRepository;
 
-    public UserService(UserRepository dbRepository) {
+    private final LicenseService licenseService;
+
+    public UserService(UserRepository dbRepository, LicenseService licenseService) {
         this.dbRepository = dbRepository;
+        this.licenseService = licenseService;
     }
 
     public UserDTO saveClient(UserDTO client){
@@ -156,6 +160,15 @@ public class UserService {
 
         } catch (UserNotFound e) {
             throw new UserNotFound(e.getMessage());
+        }
+    }
+
+    public boolean getValidityLicense(Integer id){
+        User user = dbRepository.findById((long) id).orElse(null);
+        if(user != null) {
+            return licenseService.isDriveLicenseValide(user.getDrivingLicenseNumber());
+        } else {
+            throw new UserNotFound("Client " + id + " not found");
         }
     }
 }
