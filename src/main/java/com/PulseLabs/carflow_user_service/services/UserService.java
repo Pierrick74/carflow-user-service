@@ -1,11 +1,11 @@
 package com.PulseLabs.carflow_user_service.services;
-
-import com.PulseLabs.carflow_user_service.DAO.UserDAO;
-import com.PulseLabs.carflow_user_service.DAO.UserDAOImpl;
+import com.PulseLabs.carflow_user_service.Error.DBErrorException;
 import com.PulseLabs.carflow_user_service.Error.UserNotFound;
+import com.PulseLabs.carflow_user_service.db.UserRepository;
 import com.PulseLabs.carflow_user_service.model.User;
 import com.PulseLabs.carflow_user_service.model.UserDTO;
 import org.modelmapper.ModelMapper;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,15 +15,14 @@ import java.util.List;
 public class UserService {
     private final ModelMapper modelMapper = new ModelMapper();
 
-    private final UserDAOImpl userDAO;
+    private final UserRepository dbRepository;
 
-    public UserService(UserDAOImpl userDAO) {
-        this.userDAO = userDAO;
+    public UserService(UserRepository dbRepository) {
+        this.dbRepository = dbRepository;
     }
 
     public UserDTO saveClient(UserDTO client){
 
-        // Créer un nouveau client SANS spécifier l'ID (la DB le génère automatiquement)
         User newClient = new User();
         newClient.setName(client.getName());
         newClient.setSurname(client.getSurname());
@@ -31,7 +30,7 @@ public class UserService {
         newClient.setDrivingLicenseNumber(client.getDrivingLicenseNumber());
         newClient.setRegistrationDate(client.getRegistrationDate());
 
-        userDAO.save(newClient);
+        save(newClient);
 
         return modelMapper.map(newClient, UserDTO.class);
     }
@@ -44,16 +43,16 @@ public class UserService {
         boolean surnameEmpty = (surname == null || surname.isEmpty());
 
         if (nameEmpty && surnameEmpty) {
-            clientList = userDAO.findAll();
+            clientList = (List<User>) dbRepository.findAll();
             return convert(clientList);
         }
 
         if (!nameEmpty && !surnameEmpty) {
-            clientList = userDAO.findByNameAndSurname(name, surname);
+            clientList = dbRepository.findByNameAndSurname(name, surname);
         } else if (surnameEmpty) {
-            clientList = userDAO.findByName(name);
+            clientList = dbRepository.findByName(name);
         } else {
-            clientList = userDAO.findBySurname(surname);
+            clientList = dbRepository.findBySurname(surname);
         }
         return convert(clientList);
     }
@@ -68,7 +67,7 @@ public class UserService {
     }
 
     public UserDTO getClientById(int id){
-        User result =  userDAO.findById(id);
+        User result =  dbRepository.findById((long) id).orElse(null);
 
         if(result != null) {
             return modelMapper.map(result, UserDTO.class);
@@ -80,7 +79,7 @@ public class UserService {
     public UserDTO updateClient(UserDTO client){
         try {
             if(getClientById(client.getId()) != null){
-                userDAO.update(modelMapper.map(client, User.class));
+                save(modelMapper.map(client, User.class));
                 return client;
             } else {
                 throw new UserNotFound("Client " + client.getId() + " not found");
@@ -90,10 +89,18 @@ public class UserService {
         }
     }
 
+    private void save(User user) {
+        try {
+            dbRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new DBErrorException("Problème de sauvegarde en DB:" + e.getMessage());
+        }
+    }
+
     public void deleteClient(int id){
         try {
             if(getClientById(id) != null) {
-                userDAO.delete(id);
+                dbRepository.deleteById((long) id);
             } else {
                 throw new UserNotFound("Client " + id + " not found");
             }
