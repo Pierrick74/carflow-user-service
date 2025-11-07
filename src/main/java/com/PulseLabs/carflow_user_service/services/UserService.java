@@ -135,4 +135,27 @@ public class UserService {
             throw new UserNotFound(e.getMessage());
         }
     }
+
+    public Integer getClientAgeWithId(int id){
+        try {
+            User user = dbRepository.findById((long) id).orElse(null);
+            if(user != null) {
+                LocalDate today = LocalDate.now();
+                LocalDate birthday = user.getBirthday();
+                int age = today.getYear() - birthday.getYear();
+
+                if (today.getMonthValue() < birthday.getMonthValue() ||
+                    (today.getMonthValue() == birthday.getMonthValue() && today.getDayOfMonth() < birthday.getDayOfMonth())) {
+                    age--;
+                }
+
+                return age;
+            } else {
+                throw new UserNotFound("Client " + id + " not found");
+            }
+
+        } catch (UserNotFound e) {
+            throw new UserNotFound(e.getMessage());
+        }
+    }
 }
