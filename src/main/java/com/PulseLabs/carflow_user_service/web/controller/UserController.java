@@ -42,4 +42,9 @@ public class UserController {
         userService.deleteClient(id);
         return ResponseEntity.ok("Client supprimé");
     }
+
+    @GetMapping( "/Users/{id}/age")
+    public ResponseEntity<?> getAgeOfClient(@PathVariable int id) {
+        return ResponseEntity.ok(userService.getClientAgeWithId(id));
+    }
 }
