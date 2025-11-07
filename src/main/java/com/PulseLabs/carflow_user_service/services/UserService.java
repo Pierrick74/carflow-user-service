@@ -1,5 +1,6 @@
 package com.PulseLabs.carflow_user_service.services;
 import com.PulseLabs.carflow_user_service.Error.DBErrorException;
+import com.PulseLabs.carflow_user_service.Error.InputErrorException;
 import com.PulseLabs.carflow_user_service.Error.UserNotFound;
 import com.PulseLabs.carflow_user_service.db.UserRepository;
 import com.PulseLabs.carflow_user_service.model.User;
@@ -8,6 +9,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +25,8 @@ public class UserService {
 
     public UserDTO saveClient(UserDTO client){
 
+        checkInput(client);
+
         User newClient = new User();
         newClient.setName(client.getName());
         newClient.setSurname(client.getSurname());
@@ -33,6 +37,27 @@ public class UserService {
         save(newClient);
 
         return modelMapper.map(newClient, UserDTO.class);
+    }
+
+    private void checkInput(UserDTO client) {
+        if(client.getName() == null || client.getName().isEmpty() ||
+                client.getSurname() == null || client.getSurname().isEmpty() ||
+                client.getDrivingLicenseNumber() == null || client.getDrivingLicenseNumber().isEmpty() ||
+                client.getBirthday() == null || client.getRegistrationDate() == null
+        ) {
+            throw new InputErrorException("Tous les champs sont obligatoires");
+        }
+
+        LocalDate eighteenYearsAgo = LocalDate.now().minusYears(18);
+        if(client.getBirthday().isAfter(eighteenYearsAgo)) {
+            throw new InputErrorException("L'utilisateur doit avoir au moins 18 ans");
+        }
+
+        if(client.getRegistrationDate().isAfter(LocalDate.now())) {
+            throw new InputErrorException("Problème de date sur le permis");
+        }
+
+
     }
 
     public List<UserDTO> getClients(String name, String surname) {
@@ -79,6 +104,7 @@ public class UserService {
     public UserDTO updateClient(UserDTO client){
         try {
             if(getClientById(client.getId()) != null){
+                checkInput(client);
                 save(modelMapper.map(client, User.class));
                 return client;
             } else {
