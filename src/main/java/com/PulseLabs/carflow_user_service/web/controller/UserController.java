@@ -47,4 +47,9 @@ public class UserController {
     public ResponseEntity<?> getAgeOfClient(@PathVariable int id) {
         return ResponseEntity.ok(userService.getClientAgeWithId(id));
     }
+
+    @GetMapping( "/Users/{id}/validityLicense")
+    public ResponseEntity<?> getValidityLicense(@PathVariable int id) {
+        return ResponseEntity.ok(userService.getValidityLicense(id));
+    }
 }
